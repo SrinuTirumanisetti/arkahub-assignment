@@ -1,54 +1,38 @@
-# EnergyGrid Mock API
+# EnergyGrid Data Aggregator
 
-This is the mock backend server for the EnergyGrid Data Aggregator coding assignment.
+A robust Node.js client to fetch real-time telemetry from 500 solar inverters while navigating strict rate limits and security protocols.
 
-## Prerequisites
+## Features
+- **Rate Limiting**: Strictly respects the 1 request per second limit.
+- **Batching**: Optimizes throughput by grouping up to 10 devices per request.
+- **Security**: Implements MD5 signature generation (`MD5(URL_Path + Token + Timestamp)`).
+- **Error Handling**: Gracefully handles `429 Too Many Requests` with automatic retries.
 
-- Node.js (v14 or higher)
-- npm (Node Package Manager)
+## Setup & Run
 
-## Setup and Run
-
-1.  **Navigate to the project directory:**
-    ```bash
-    cd mock-api
-    ```
-
-2.  **Install dependencies:**
+1.  **Install dependencies**:
     ```bash
     npm install
     ```
 
-3.  **Start the server:**
+2.  **Start the Mock API Server**:
+    (If not already running)
     ```bash
     npm start
     ```
-    Or directly:
+
+3.  **Run the Aggregator**:
     ```bash
-    node server.js
+    node aggregator.js
     ```
 
-4.  **Verify:**
-    You should see the following output:
-    ```
-    ⚡ EnergyGrid Mock API running on port 3000
-       Constraints: 1 req/sec, Max 10 items/batch
-    ```
-    The server is now listening at `http://localhost:3000`.
+## Implementation Details
 
-## API Details
+### Rate Limiting
+The aggregator uses a `delay` mechanism to ensure at least 1000ms passes between consecutive requests. It also calculates the elapsed time of each request to subtract from the wait time, ensuring maximum efficiency without violating the limit.
 
--   **Base URL:** `http://localhost:3000`
--   **Endpoint:** `POST /device/real/query`
--   **Auth Token:** `interview_token_123`
+### Security
+The `signature` header is generated using the built-in `crypto` module. It follows the format `MD5(path + token + timestamp)`, where `path` is the endpoint's absolute path (`/device/real/query`).
 
-### Security Headers Required
-Every request must include:
-- `timestamp`: Current time in milliseconds.
-- `signature`: `MD5( URL + Token + timestamp )`
-
-### Constraints
-- **Rate Limit:** 1 request per second.
-- **Batch Size:** Max 10 serial numbers per request.
-
-See `instructions.md` for full details.
+### Error Handling
+If a `429` error is encountered, the client waits for 2 seconds and retries the batch. Other errors are logged and handled to ensure the process continues or halts gracefully depending on the severity.
